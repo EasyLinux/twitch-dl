@@ -1,0 +1,3 @@
+#!/bin/bash
+
+twitch-dl download https://www.twitch.tv/videos/599420493

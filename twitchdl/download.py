@@ -44,7 +44,7 @@ def download_file(url, path, retries=RETRY_COUNT):
     raise DownloadFailed(":(")
 
 
-def _print_progress(futures):
+def _print_progress(video_id, futures):
     downloaded_count = 0
     downloaded_size = 0
     max_msg_size = 0
@@ -70,18 +70,26 @@ def _print_progress(futures):
             "at <cyan>{}/s</cyan>".format(format_size(speed)) if speed > 0 else "",
             "remaining <cyan>~{}</cyan>".format(format_duration(remaining)) if speed > 0 else "",
         ])
+        logMsg = "{}/{}/{}/{}/{}".format(downloaded_count, total_count,percentage,format_size(downloaded_size),format_size(est_total_size))
+        _status(video_id, logMsg)
 
         max_msg_size = max(len(msg), max_msg_size)
         print_out("\r" + msg.ljust(max_msg_size), end="")
 
 
-def download_files(base_url, directory, filenames, max_workers):
+def download_files(video_id, base_url, directory, filenames, max_workers):
     urls = [base_url + f for f in filenames]
     paths = ["{}{:05d}.vod".format(directory, k) for k, _ in enumerate(filenames)]
     partials = (partial(download_file, url, path) for url, path in zip(urls, paths))
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = [executor.submit(fn) for fn in partials]
-        _print_progress(futures)
+        _print_progress(video_id, futures)
 
     return paths
+
+
+def _status(video_id, message):
+    status = open("log/status.log","w")
+    status.write("{}:{}".format(video_id,message))
+    status.close()

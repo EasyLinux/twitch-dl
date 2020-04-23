@@ -1,0 +1,12 @@
+#!/bin/bash
+
+ID=$(ps a| grep twitch-dl | grep python3)
+if [ "$ID" == "" ];then
+  echo "Pas lancé"
+  # A faire ?
+  #./Download
+else
+  echo "En cours de fonctionnement"
+fi
+
+# twitch-dl download https://www.twitch.tv/videos/599420493

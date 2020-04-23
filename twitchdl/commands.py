@@ -17,12 +17,12 @@ from twitchdl.output import print_out, print_video
 
 
 def videos(channel_name, limit, offset, sort, **kwargs):
-    print_out("Recherche de l'utilisateur...")
+    # print_out("Recherche de l'utilisateur...")
     user = twitch.get_user(channel_name)
     if not user:
         raise ConsoleError("Utilisateur {} non trouvé.".format(channel_name))
 
-    print_out("Charge les videos...")
+    # print_out("Charge les videos...")
     videos = twitch.get_channel_videos(user["id"], limit, offset, sort)
     count = len(videos['videos'])
     if not count:
@@ -32,20 +32,22 @@ def videos(channel_name, limit, offset, sort, **kwargs):
     first = offset + 1
     last = offset + len(videos['videos'])
     total = videos["_total"]
-    print_out("<yellow>Affichage des videos {}-{} de {}</yellow>".format(first, last, total))
+    # print_out("<yellow>Affichage des videos {}-{} de {}</yellow>".format(first, last, total))
 
     for video in videos['videos']:
         print_video(video)
 
 
 def _select_quality(playlists):
-    print_out("\nQualité disponible:")
+    # print_out("\nQualité disponible:")
     for n, p in enumerate(playlists):
         name = p.media[0].name if p.media else ""
         resolution = "x".join(str(r) for r in p.stream_info.resolution)
-        print_out("{}) {} [{}]".format(n + 1, name, resolution))
+        # print_out("{}) {} [{}]".format(n + 1, name, resolution))
 
-    no = utils.read_int("Votre choix", min=1, max=len(playlists) + 1, default=1)
+    # no = utils.read_int("Votre choix", min=1, max=len(playlists) + 1, default=1)
+    no=1
+    # print_out("Choisi 1")
 
     return playlists[no - 1]
 
@@ -76,9 +78,9 @@ def _video_target_filename(video, format):
 
     name = "_".join([
         date,
-        video['_id'][1:],
-        video['channel']['name'],
-        utils.slugify(video['title']),
+        video['_id'][1:]
+        # video['channel']['name'],
+        # utils.slugify(video['title']),
     ])
 
     return name + "." + format
@@ -90,7 +92,7 @@ def _get_files(playlist, start, end):
     for segment in playlist.segments:
         vod_end = vod_start + segment.duration
 
-        # `vod_end > start` is used here becuase it's better to download a bit
+        # `vod_end > start` is used here because it's better to download a bit
         # more than a bit less, similar for the end condition
         start_condition = not start or vod_end > start
         end_condition = not end or vod_start < end
@@ -172,24 +174,26 @@ def _download_clip(slug, **kwargs):
 
 
 def _download_video(video_id, max_workers, format='mkv', start=None, end=None, keep=False, **kwargs):
+
     if start and end and end <= start:
         raise ConsoleError("End time must be greater than start time")
 
-    print_out("Looking up video...")
+    # print_out("Recherche de la vidéo...")
     video = twitch.get_video(video_id)
 
-    print_out("Found: <blue>{}</blue> by <yellow>{}</yellow>".format(
+    _log(video_id,"Charge: {}".format(video['title']))
+    print_out("Trouvé: <blue>{}</blue> by <yellow>{}</yellow>".format(
         video['title'], video['channel']['display_name']))
 
-    print_out("Fetching access token...")
+    # print_out("Recherche de l'accès...")
     access_token = twitch.get_access_token(video_id)
 
-    print_out("Fetching playlists...")
+    # print_out("Liste des fichiers...")
     playlists = twitch.get_playlists(video_id, access_token)
     parsed = m3u8.loads(playlists)
     selected = _select_quality(parsed.playlists)
 
-    print_out("\nFetching playlist...")
+    # print_out("\nListe...")
     response = requests.get(selected.uri)
     response.raise_for_status()
     playlist = m3u8.loads(response.text)
@@ -204,20 +208,27 @@ def _download_video(video_id, max_workers, format='mkv', start=None, end=None, k
     with open(target_dir + "playlist.m3u8", "w") as f:
         f.write(response.text)
 
-    print_out("\nDownloading {} VODs using {} workers to {}".format(
-        len(filenames), max_workers, target_dir))
-    file_paths = download_files(base_uri, target_dir, filenames, max_workers)
+    # print_out("\nTélécharge {} VODs avec {} threads dans {}".format(
+    #     len(filenames), max_workers, target_dir))
+    file_paths = download_files(video_id,base_uri, target_dir, filenames, max_workers)
 
-    print_out("\n\nJoining files...")
     target = _video_target_filename(video, format)
-    _join_vods(target_dir, file_paths, target)
+    print_out("\nCible: {}".format(target))
+    _join_vods(target_dir, file_paths, "videos/{}".format(target))
 
     if keep:
         print_out("\nTemporary files not deleted: {}".format(target_dir))
     else:
-        print_out("\nDeleting temporary files...")
+        # print_out("\nSupprime le fichier temporaire...")
         shutil.rmtree(target_dir)
 
-    print_out("Downloaded: {}".format(target))
+    print_out("Fichier téléchargé: {}".format(target))
+    _log(video_id,"Terminé {}".format(target))
 
-def backup(channel_name, day, **kwargs)
+def _log(video_id,message):
+    log = open("log/journal.log","a")
+    log.write("{}: {}\n".format(video_id,message))
+    log.close()
+    status = open("log/status.log","w")
+    status.write("{}: {}".format(video_id,message))
+    status.close()
