@@ -70,7 +70,7 @@ def _print_progress(video_id, futures):
             "at <cyan>{}/s</cyan>".format(format_size(speed)) if speed > 0 else "",
             "remaining <cyan>~{}</cyan>".format(format_duration(remaining)) if speed > 0 else "",
         ])
-        logMsg = "{}/{}/{}/{}/{}".format(downloaded_count, total_count,percentage,format_size(downloaded_size),format_size(est_total_size))
+        logMsg = "Fichier {} sur {} -{}% Fait, {} sur un total de {}".format(downloaded_count, total_count,percentage,format_size(downloaded_size),format_size(est_total_size))
         _status(video_id, logMsg)
 
         max_msg_size = max(len(msg), max_msg_size)

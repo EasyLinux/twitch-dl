@@ -17,12 +17,10 @@ from twitchdl.output import print_out, print_video
 
 
 def videos(channel_name, limit, offset, sort, **kwargs):
-    # print_out("Recherche de l'utilisateur...")
     user = twitch.get_user(channel_name)
     if not user:
         raise ConsoleError("Utilisateur {} non trouvé.".format(channel_name))
 
-    # print_out("Charge les videos...")
     videos = twitch.get_channel_videos(user["id"], limit, offset, sort)
     count = len(videos['videos'])
     if not count:
@@ -32,7 +30,6 @@ def videos(channel_name, limit, offset, sort, **kwargs):
     first = offset + 1
     last = offset + len(videos['videos'])
     total = videos["_total"]
-    # print_out("<yellow>Affichage des videos {}-{} de {}</yellow>".format(first, last, total))
 
     for video in videos['videos']:
         print_video(video)
@@ -47,7 +44,6 @@ def _select_quality(playlists):
 
     # no = utils.read_int("Votre choix", min=1, max=len(playlists) + 1, default=1)
     no=1
-    # print_out("Choisi 1")
 
     return playlists[no - 1]
 
@@ -64,9 +60,10 @@ def _join_vods(directory, file_paths, target):
         "-f", "concat",
         "-i", input_path,
         "-c", "copy",
+        "-progress","log/ffmpeg.log",
         target,
         "-stats",
-        "-loglevel", "warning",
+        "-loglevel", "0",
     ])
 
     result.check_returncode()
@@ -173,22 +170,21 @@ def _download_clip(slug, **kwargs):
     print("Downloaded: {}".format(filename))
 
 
-def _download_video(video_id, max_workers, format='mkv', start=None, end=None, keep=False, **kwargs):
+def _download_video(video_id, max_workers, format='mp4', start=None, end=None, keep=False, **kwargs):
 
     if start and end and end <= start:
         raise ConsoleError("End time must be greater than start time")
 
-    # print_out("Recherche de la vidéo...")
+    _log(video_id,"Recherche la video ")
     video = twitch.get_video(video_id)
 
-    _log(video_id,"Charge: {}".format(video['title']))
+    _log(video_id,"Informations sur {}".format(video['title']))
     print_out("Trouvé: <blue>{}</blue> by <yellow>{}</yellow>".format(
         video['title'], video['channel']['display_name']))
 
-    # print_out("Recherche de l'accès...")
     access_token = twitch.get_access_token(video_id)
 
-    # print_out("Liste des fichiers...")
+    _log(video_id, "Obtention de la liste des fichiers...")
     playlists = twitch.get_playlists(video_id, access_token)
     parsed = m3u8.loads(playlists)
     selected = _select_quality(parsed.playlists)
@@ -214,7 +210,7 @@ def _download_video(video_id, max_workers, format='mkv', start=None, end=None, k
 
     target = _video_target_filename(video, format)
     print_out("\nCible: {}".format(target))
-    _join_vods(target_dir, file_paths, "videos/{}".format(target))
+    _join_vods(target_dir, file_paths, "videos/Download/{}".format(target))
 
     if keep:
         print_out("\nTemporary files not deleted: {}".format(target_dir))

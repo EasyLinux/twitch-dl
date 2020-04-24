@@ -60,36 +60,6 @@ COMMANDS = [
         ],
     ),
     Command(
-        name="backup",
-        description="Sauvegarde les videos d'un canal",
-        arguments=[
-            (["channel_name"], {
-                "help": "channel name",
-                "type": str,
-            }),
-            (["day"], {
-                "help": "Jour à sauvegarder",
-                "type": str,
-            }),
-            (["-l", "--limit"], {
-                "help": "Number of videos to fetch (default 10, max 100)",
-                "type": int,
-                "default": 10,
-            }),
-            (["-o", "--offset"], {
-                "help": "Offset for pagination of results. (default 0)",
-                "type": int,
-                "default": 0,
-            }),
-            (["-s", "--sort"], {
-                "help": "Sorting order of videos. (default: time)",
-                "type": str,
-                "choices": ["views", "time"],
-                "default": "time",
-            }),
-        ],
-    ),
-    Command(
         name="download",
         description="Download a video",
         arguments=[
@@ -115,9 +85,9 @@ COMMANDS = [
             }),
             (["-f", "--format"], {
                 "help": "Video format to convert into, passed to ffmpeg as the "
-                        "target file extension (default: mkv)",
+                        "target file extension (default: mp4)",
                 "type": str,
-                "default": "mkv",
+                "default": "mp4",
             }),
             (["-k", "--keep"], {
                 "help": "Don't delete downloaded VODs and playlists after merging.",
